@@ -12,7 +12,7 @@ void setup()
   while (!Serial)
   {
     delay(10);
-  } // 等待串口就绪
+  }
   Serial.println("Starting...");
   Wire1.setSCL(PB8);
   Wire1.setSDA(PB9);
