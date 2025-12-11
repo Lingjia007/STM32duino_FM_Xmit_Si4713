@@ -23,7 +23,7 @@
 #define RESETPIN PA12
 
 #define FMSTATION 10230 // 10230 == 102.30 MHz
-extern TwoWire Wire1;
+TwoWire Wire_Si4713(PB11, PB10);
 Adafruit_Si4713 radio = Adafruit_Si4713(RESETPIN);
 
 void Si4713_Print_ASQ_Status()
@@ -45,7 +45,10 @@ void Si4713_Print_ASQ_Status()
 }
 void Si4713_Init()
 {
-    if (!radio.begin(SI4710_ADDR1, &Wire1))
+    radio.reset();
+    delay(100);
+
+    if (!radio.begin(SI4710_ADDR1, &Wire_Si4713))
     { // begin with address 0x63 (CS high default)
         Serial.println("Couldn't find radio?");
         while (1)
@@ -99,22 +102,34 @@ void FM_Xmit_Proc(void)
     display.setTextSize(2);
     display.setTextColor(SSD1306_WHITE);
     display.setCursor(0, 0);
-    display.print("FM Xmit");
+    display.print("  FM Xmit");
+    display.setCursor(0, 16);
+    display.print("  Init...");
     display.display();
+
     Si4713_Init();
-    delay(1000);
+    KEY_Set_FM_Active(true); // 启用FM按键控制
+
+    display.setTextSize(1);
+    display.setCursor(0, 0);
+
     while (1)
     {
-
         // radio.readASQ();
         // Si4713_Print_ASQ_Status();
         // Serial.print("\tCurr InLevel:");
         // Serial.println(radio.currInLevel);
-
+        display.clearDisplay();
+        display.setCursor(0, 0);
+        display.printf("FM %d.%02d MHz", radio.currFreq / 100, radio.currFreq % 100);
+        display.display();
         delay(10);
 
         if (menu_command_callback(GET_EVENT_BACK))
+        {
+            KEY_Set_FM_Active(false); // 禁用FM按键控制
             return;
+        }
     }
 }
 
@@ -127,6 +142,7 @@ void FM_Freq_Up(void)
     radio.readTuneStatus();
     Serial.print("\tCurr freq: ");
     Serial.println(radio.currFreq);
+    delay(50);
 }
 
 void FM_Freq_Down(void)
@@ -138,4 +154,5 @@ void FM_Freq_Down(void)
     radio.readTuneStatus();
     Serial.print("\tCurr freq: ");
     Serial.println(radio.currFreq);
+    delay(50);
 }

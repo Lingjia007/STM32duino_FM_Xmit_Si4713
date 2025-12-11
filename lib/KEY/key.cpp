@@ -117,16 +117,30 @@ bool KEY_Read(void)
     return KEY_Scan() != KEY_NONE;
 }
 
+// 添加全局状态标志
+static bool fm_xmit_active = false;
+
+void KEY_Set_FM_Active(bool active)
+{
+    fm_xmit_active = active;
+}
+
 void KEY_Process(void)
 {
     uint8_t key = KEY_Scan();
     switch (key)
     {
     case KEY_FREQ_UP:
-        FM_Freq_Up();
+        if (fm_xmit_active)
+        {
+            FM_Freq_Up();
+        }
         break;
     case KEY_FREQ_DOWN:
-        FM_Freq_Down();
+        if (fm_xmit_active)
+        {
+            FM_Freq_Down();
+        }
         break;
     case KEY_TXPOWER_UP:
         break;

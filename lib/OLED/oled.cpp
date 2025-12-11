@@ -2,8 +2,8 @@
 #include "oled.h"
 #include <Wire.h>
 
-TwoWire Wire1;
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire1, OLED_RESET, 800000);
+TwoWire Wire_Oled(PB9, PB8);
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire_Oled, OLED_RESET, 800000);
 
 void Oled_Init()
 {

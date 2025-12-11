@@ -14,8 +14,6 @@ void setup()
     delay(10);
   }
   Serial.println("Starting...");
-  Wire1.setSCL(PB8);
-  Wire1.setSDA(PB9);
   KEY_Init();
   Encoder_Init();
   Oled_Init();

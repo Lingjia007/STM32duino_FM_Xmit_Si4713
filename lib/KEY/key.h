@@ -24,5 +24,5 @@ Key_t KEY_Scan(void);
 void KEY_Test(void);
 bool KEY_Read(void);
 void KEY_Process(void);
-
+void KEY_Set_FM_Active(bool active);
 #endif
