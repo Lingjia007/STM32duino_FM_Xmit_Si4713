@@ -89,6 +89,7 @@ void MENU_ShowOptionList(MENU_HandleTypeDef *hMENU);
 uint8_t MENU_ShowOption(int16_t X, int16_t Y, MENU_OptionTypeDef *Option);
 void MENU_ShowCursor(MENU_HandleTypeDef *hMENU);
 void MENU_ShowBorder(MENU_HandleTypeDef *hMENU);
+void MENU_ShowScrollbar(MENU_HandleTypeDef *hMENU);
 
 /**********************************************************/
 /* use */

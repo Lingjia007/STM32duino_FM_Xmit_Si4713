@@ -20,7 +20,7 @@
 #include "si4713.h"
 #include "menu.h"
 
-#define RESETPIN PA12
+#define RESETPIN PB0
 
 #define FMSTATION 10230 // 10230 == 102.30 MHz
 TwoWire Wire_Si4713(PB11, PB10);
@@ -110,20 +110,36 @@ void FM_Xmit_Proc(void)
     Si4713_Init();
     KEY_Set_FM_Active(true); // 启用FM按键控制
 
-    display.setTextSize(1);
+    display.setTextSize(2);
     display.setCursor(0, 0);
 
     while (1)
     {
-        // radio.readASQ();
+        radio.readASQ();
         // Si4713_Print_ASQ_Status();
         // Serial.print("\tCurr InLevel:");
         // Serial.println(radio.currInLevel);
         display.clearDisplay();
         display.setCursor(0, 0);
-        display.printf("FM %d.%02d MHz", radio.currFreq / 100, radio.currFreq % 100);
+        display.print("  FM Xmit");
+        display.setCursor(0, 16);
+        display.printf("%03d.%02d MHz", radio.currFreq / 100, radio.currFreq % 100);
+        // 显示当前输入信号级别(dB)
+        display.setCursor(0, 32);
+        display.print("In Level->");
+        display.printf("  - %02d dB", -radio.currInLevel);
+        // 在最右侧绘制垂直的dB指示器背景(圆角矩形)
+        display.drawRoundRect(120, 0, 7, 64, 3, SSD1306_WHITE);
+        int16_t clampedLevel = constrain(radio.currInLevel, -70, 0);
+        int16_t fillHeight = map(clampedLevel, -70, 0, 0, 58);
+        if (fillHeight > 0)
+        {
+            // 从底部向上填充，所以需要计算Y坐标
+            int16_t fillY = 64 - fillHeight - 3; // 3是边框和间隙
+            display.fillRoundRect(122, fillY, 3, fillHeight, 1, SSD1306_WHITE);
+        }
         display.display();
-        delay(10);
+        delay(5);
 
         if (menu_command_callback(GET_EVENT_BACK))
         {

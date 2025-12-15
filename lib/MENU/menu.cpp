@@ -65,14 +65,18 @@
 #define MENU_FONT_W 12 // Adafruit默认字体宽度
 #define MENU_FONT_H 16 // Adafruit默认字体高度
 
-#define MENU_BORDER 1        // 边框线条尺寸
+#define MENU_BORDER 0        // 边框线条尺寸
 #define IS_CENTERED 1        // 是否居中
 #define IS_OVERSHOOT 1       // 是否过冲 (果冻效果)
-#define OVERSHOOT 0.321      // 过冲量 0 < 范围 < 1;
-#define ANIMATION_SPEED 0.38 // 动画速度 0 < 范围 <= 1;
+#define OVERSHOOT 0.368      // 过冲量 0 < 范围 < 1;
+#define ANIMATION_SPEED 0.28 // 动画速度 0 < 范围 <= 1;
 
 #define CURSOR_CEILING (((MENU_HEIGHT - MENU_MARGIN - MENU_MARGIN) / MENU_LINE_H) - 1) // 光标限位
 
+#define EABLE_SCROLLBAR                                                        // 是否启用滚动条
+#define SCROLLBAR_WIDTH 4                                                      // 滚动条宽度
+#define SCROLLBAR_MARGIN 2                                                     // 滚动条边距
+#define SCROLLBAR_X (MENU_X + MENU_WIDTH - SCROLLBAR_WIDTH - SCROLLBAR_MARGIN) // 滚动条X位置
 /** Port 移植接口 * **************************************************************/
 /* 依赖头文件 */
 
@@ -123,10 +127,10 @@ int menu_command_callback(enum _menu_command command, ...)
         int cursor_yend = va_arg(args, int);
 
         // 使用 INVERSE 反转像素，实现白底黑字效果
-        display.fillRect(cursor_xsta, cursor_ysta,
-                         COORD_CHANGE_SIZE(cursor_xsta, cursor_xend),
-                         COORD_CHANGE_SIZE(cursor_ysta, cursor_yend),
-                         SSD1306_INVERSE);
+        display.fillRoundRect(cursor_xsta, cursor_ysta,
+                              COORD_CHANGE_SIZE(cursor_xsta, cursor_xend),
+                              COORD_CHANGE_SIZE(cursor_ysta, cursor_yend), 3,
+                              SSD1306_INVERSE);
     }
     break;
 
@@ -137,7 +141,7 @@ int menu_command_callback(enum _menu_command command, ...)
         int frame_width = va_arg(args, int);
         int frame_height = va_arg(args, int);
 
-        display.drawRect(frame_x, frame_y, frame_width, frame_height, SSD1306_WHITE);
+        display.drawRoundRect(frame_x, frame_y, frame_width, frame_height, 3, SSD1306_WHITE);
     }
     break;
 
@@ -183,8 +187,11 @@ void MENU_RunMenu(MENU_HandleTypeDef *hMENU)
         menu_command_callback(BUFFER_CLEAR); // 擦除缓冲区
 
         MENU_ShowOptionList(hMENU); /* 显示选项列表 */
-        MENU_ShowCursor(hMENU);     /* 显示光标 */
-        MENU_ShowBorder(hMENU);     // 显示边框
+#ifdef EABLE_SCROLLBAR
+        MENU_ShowScrollbar(hMENU); /* 显示滚动条 */
+#endif
+        MENU_ShowCursor(hMENU); /* 显示光标 */
+        MENU_ShowBorder(hMENU); // 显示边框
 
         menu_command_callback(BUFFER_DISPLAY); // 缓冲区更新至显示器
 
@@ -395,9 +402,9 @@ void MENU_ShowCursor(MENU_HandleTypeDef *hMENU)
         target_yend = SIZE_CHANGE_COORD(target_ysta, cursor_height);
 
 #if (IS_OVERSHOOT != 0)
-        bounce_xsta = target_xsta + (target_xsta - actual_xsta) * OVERSHOOT;
+        bounce_xsta = target_xsta + (target_xsta - actual_xsta) * OVERSHOOT * 1.05;
         bounce_ysta = target_ysta + (target_ysta - actual_ysta) * OVERSHOOT;
-        bounce_xend = target_xend + (target_xend - actual_xend) * OVERSHOOT;
+        bounce_xend = target_xend + (target_xend - actual_xend) * OVERSHOOT * 1.05;
         bounce_yend = target_yend + (target_yend - actual_yend) * OVERSHOOT;
 
         bounce_cnt_xsta = 2; // 反弹次数
@@ -464,4 +471,43 @@ void MENU_ShowBorder(MENU_HandleTypeDef *hMENU) // 显示边框
     }
 }
 
+// 添加滚动条显示函数
+void MENU_ShowScrollbar(MENU_HandleTypeDef *hMENU)
+{
+    // 只有当选项数量超过显示行数时才显示滚动条
+    if (hMENU->Option_Max_i <= CURSOR_CEILING)
+        return;
+
+    // 计算滚动条轨道高度和位置
+    int16_t track_height = MENU_HEIGHT - 2 * MENU_MARGIN;
+    int16_t track_y = MENU_Y + MENU_MARGIN;
+
+    // 绘制滚动条背景轨道 (黑色背景)
+    display.fillRect(SCROLLBAR_X, track_y, SCROLLBAR_WIDTH, track_height, SSD1306_BLACK);
+    display.drawRoundRect(SCROLLBAR_X, track_y, SCROLLBAR_WIDTH, track_height, 1, SSD1306_WHITE);
+
+    // 计算滚动块的高度和位置
+    float visible_ratio = (float)(CURSOR_CEILING + 1) / (hMENU->Option_Max_i + 1);
+    int16_t thumb_height = (int16_t)(track_height * visible_ratio);
+    if (thumb_height < 3)
+        thumb_height = 3; // 最小高度
+
+    // 计算滚动块位置
+    float scroll_ratio = 0;
+    if (hMENU->Option_Max_i > CURSOR_CEILING)
+    {
+        scroll_ratio = (float)hMENU->Show_i / (hMENU->Option_Max_i - CURSOR_CEILING);
+    }
+
+    int16_t thumb_y = track_y + (int16_t)((track_height - thumb_height) * scroll_ratio);
+
+    // 确保滚动块不会超出轨道范围
+    if (thumb_y + thumb_height > track_y + track_height)
+    {
+        thumb_y = track_y + track_height - thumb_height;
+    }
+
+    // 绘制滚动块
+    display.fillRoundRect(SCROLLBAR_X, thumb_y, SCROLLBAR_WIDTH, thumb_height, 1, SSD1306_WHITE);
+}
 /* ******************************************************** */

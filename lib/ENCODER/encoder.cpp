@@ -101,7 +101,7 @@ void Encoder_Init()
 
     // 定时器初始化 - 10ms中断
     timer3 = new HardwareTimer(TIM3);
-    timer3->setOverflow(10000, MICROSEC_FORMAT); // 10ms = 10000us
+    timer3->setOverflow(2000, MICROSEC_FORMAT); // 2ms = 2000us
     timer3->attachInterrupt(Timer3_IRQHandler);
     timer3->resume();
 }

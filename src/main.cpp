@@ -27,6 +27,7 @@ void MENU_RunMainMenu(void)
                                                  {"Tools", MENU_RunToolsMenu},
                                                  {"Games", MENU_RunGamesMenu},
                                                  {"Setting", NULL},
+                                                 {"Info", NULL},
                                                  {".."}};
 
   static MENU_HandleTypeDef MENU = {.OptionList = MENU_OptionList, .IsSettingList = 0};
